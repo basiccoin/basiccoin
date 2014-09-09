@@ -35,7 +35,7 @@ CTxMemPool mempool;
 unsigned int nTransactionsUpdated = 0;
 
 map<uint256, CBlockIndex*> mapBlockIndex;
-uint256 hashGenesisBlock("0x12a765e31ffd4059bada1e25190f6e98c99d9714d334efa41a195a7e7e04bfe2");
+uint256 hashGenesisBlock("0x");
 static CBigNum bnProofOfWorkLimit(~uint256(0) >> 20); // Basiccoin: starting difficulty is 1 / 2^12
 CBlockIndex* pindexGenesisBlock = NULL;
 int nBestHeight = -1;
@@ -1235,6 +1235,8 @@ void static InvalidBlockFound(CBlockIndex *pindex) {
 
 bool ConnectBestBlock(CValidationState &state) {
     do {
+        
+        printf("Getting to connect best block DIAG\n");
         CBlockIndex *pindexNewBest;
 
         {
@@ -1251,6 +1253,7 @@ bool ConnectBestBlock(CValidationState &state) {
         CBlockIndex *pindexTest = pindexNewBest;
         std::vector<CBlockIndex*> vAttach;
         do {
+            return true;
             if (pindexTest->nStatus & BLOCK_FAILED_MASK) {
                 // mark descendants failed
                 CBlockIndex *pindexFailed = pindexNewBest;
@@ -2632,7 +2635,7 @@ bool LoadBlockIndex() {
         pchMessageStart[1] = 0xc1;
         pchMessageStart[2] = 0xb7;
         pchMessageStart[3] = 0xdc;
-        hashGenesisBlock = uint256("0x7d6da8862caf7c1a87b28cfb21cc0e9d4df2a65f79a2306ce4c79dca8f00da31");
+        hashGenesisBlock = uint256("0x6be7c8f3be4e9d3f6f03a817b082018f8a18e93311f60ff34c62181a23ebb0a6");
     }
 
     //
@@ -2668,7 +2671,7 @@ bool InitBlockIndex() {
         //   vMerkleTree: 97ddfbbae6
 
         // Genesis block
-        const char* pszTimestamp = "Archaeologists in Greece find two large marble statues at ancient tomb with possible link to Alexander the Great";
+        const char* pszTimestamp = "Archaeologists in Greece find two large marble statues at ancient tomb with possible link to Alexander the Great...!";
         CTransaction txNew;
         txNew.vin.resize(1);
         txNew.vout.resize(1);
@@ -2680,13 +2683,13 @@ bool InitBlockIndex() {
         block.hashPrevBlock = 0;
         block.hashMerkleRoot = block.BuildMerkleTree();
         block.nVersion = 1;
-        block.nTime = 1410211310;
+        block.nTime = 1410271584;
         block.nBits = 0x1e0ffff0;
-        block.nNonce = 386930662;
+        block.nNonce = 0;
 
         if (fTestNet) {
-            block.nTime = 1410211311;
-            block.nNonce = 391245724;
+            block.nTime = 1410271584;
+            block.nNonce = 553382;
         }
 
         //// debug print
@@ -2694,9 +2697,13 @@ bool InitBlockIndex() {
         printf("%s\n", hash.ToString().c_str());
         printf("%s = Genesis Block\n", hashGenesisBlock.ToString().c_str());
         printf("%s\n", block.hashMerkleRoot.ToString().c_str());
-        assert(block.hashMerkleRoot == uint256("0x01419fa709607eb6199768952ce4a8fd2dff1a4d31f9f58ba79129cdef6e115f"));
+        assert(block.hashMerkleRoot == uint256("0x1f1ed2572f95affa5ec799aef6665551f1c7ebf064c854d0e0e569715942f877"));
 
-        if (false && block.GetHash() != hashGenesisBlock) {
+        // This part was used to generate the genesis block.
+        // Uncomment to use it again.
+
+        // If genesis block hash does not match, then generate new genesis hash.
+        if (true && block.GetHash() != hashGenesisBlock) {
             printf("Searching for genesis block...\n");
             // This will figure out a valid hash and Nonce if you're
             // creating a different genesis block:
@@ -2704,7 +2711,20 @@ bool InitBlockIndex() {
             uint256 thash;
             char scratchpad[SCRYPT_SCRATCHPAD_SIZE];
             loop{
+            #if defined(USE_SSE2)
+                // Detection would work, but in cases where we KNOW it always has SSE2,
+                // it is faster to use directly than to use a function pointer or conditional.
+            #if defined(_M_X64) || defined(__x86_64__) || defined(_M_AMD64) || (defined(MAC_OSX) && defined(__i386__))
+                // Always SSE2: x86_64 or Intel MacOS X
+                scrypt_1024_1_1_256_sp_sse2(BEGIN(block.nVersion), BEGIN(thash), scratchpad);
+            #else
+                // Detect SSE2: 32bit x86 Linux or Windows
                 scrypt_1024_1_1_256_sp(BEGIN(block.nVersion), BEGIN(thash), scratchpad);
+            #endif
+            #else
+                // Generic scrypt
+                scrypt_1024_1_1_256_sp_generic(BEGIN(block.nVersion), BEGIN(thash), scratchpad);
+            #endif
                 if (thash <= hashTarget)
                     break;
                 if ((block.nNonce & 0xFFF) == 0) {
@@ -3208,17 +3228,14 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
 
         cPeerBlockCounts.input(pfrom->nStartingHeight);
     }
-
     else if (pfrom->nVersion == 0) {
         // Must have a version message before anything else
         pfrom->Misbehaving(1);
         return false;
     }
-
     else if (strCommand == "verack") {
         pfrom->SetRecvVersion(min(pfrom->nVersion, PROTOCOL_VERSION));
     }
-
     else if (strCommand == "addr") {
         vector<CAddress> vAddr;
         vRecv >> vAddr;
@@ -3281,7 +3298,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
         if (pfrom->fOneShot)
             pfrom->fDisconnect = true;
     }
-
     else if (strCommand == "inv") {
         vector<CInv> vInv;
         vRecv >> vInv;
@@ -3326,7 +3342,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
             Inventory(inv.hash);
         }
     }
-
     else if (strCommand == "getdata") {
         vector<CInv> vInv;
         vRecv >> vInv;
@@ -3344,7 +3359,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
         pfrom->vRecvGetData.insert(pfrom->vRecvGetData.end(), vInv.begin(), vInv.end());
         ProcessGetData(pfrom);
     }
-
     else if (strCommand == "getblocks") {
         CBlockLocator locator;
         uint256 hashStop;
@@ -3373,7 +3387,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
             }
         }
     }
-
     else if (strCommand == "getheaders") {
         CBlockLocator locator;
         uint256 hashStop;
@@ -3404,7 +3417,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
         }
         pfrom->PushMessage("headers", vHeaders);
     }
-
     else if (strCommand == "tx") {
         vector<uint256> vWorkQueue;
         vector<uint256> vEraseQueue;
@@ -3474,7 +3486,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
                 pfrom->Misbehaving(nDoS);
         }
     }
-
     else if (strCommand == "block" && !fImporting && !fReindex) // Ignore blocks received while importing
     {
         CBlock block;
@@ -3494,14 +3505,12 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
             if (nDoS > 0)
                 pfrom->Misbehaving(nDoS);
     }
-
     else if (strCommand == "getaddr") {
         pfrom->vAddrToSend.clear();
         vector<CAddress> vAddr = addrman.GetAddr();
         BOOST_FOREACH(const CAddress &addr, vAddr)
         pfrom->PushAddress(addr);
     }
-
     else if (strCommand == "mempool") {
         std::vector<uint256> vtxid;
         LOCK2(mempool.cs, pfrom->cs_filter);
@@ -3519,7 +3528,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
         if (vInv.size() > 0)
             pfrom->PushMessage("inv", vInv);
     }
-
     else if (strCommand == "ping") {
         if (pfrom->nVersion > BIP0031_VERSION) {
             uint64 nonce = 0;
@@ -3538,7 +3546,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
             pfrom->PushMessage("pong", nonce);
         }
     }
-
     else if (strCommand == "alert") {
         CAlert alert;
         vRecv >> alert;
@@ -3564,7 +3571,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
             }
         }
     }
-
     else if (!fBloomFilters &&
             (strCommand == "filterload" ||
             strCommand == "filteradd" ||
@@ -3572,8 +3578,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
         pfrom->CloseSocketDisconnect();
         return error("peer %s attempted to set a bloom filter even though we do not advertise that service",
                 pfrom->addr.ToString().c_str());
-    }
-    else if (strCommand == "filterload") {
+    } else if (strCommand == "filterload") {
         CBloomFilter filter;
         vRecv >> filter;
 
@@ -3588,7 +3593,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
         }
         pfrom->fRelayTxes = true;
     }
-
     else if (strCommand == "filteradd") {
         vector<unsigned char> vData;
         vRecv >> vData;
@@ -3605,14 +3609,12 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv) 
                 pfrom->Misbehaving(100);
         }
     }
-
     else if (strCommand == "filterclear") {
         LOCK(pfrom->cs_filter);
         delete pfrom->pfilter;
         pfrom->pfilter = new CBloomFilter();
         pfrom->fRelayTxes = true;
     }
-
     else {
         // Ignore unknown commands for extensibility
     }
@@ -3707,7 +3709,7 @@ bool ProcessMessages(CNode* pfrom) {
                 fRet = ProcessMessage(pfrom, strCommand, vRecv);
             }
             boost::this_thread::interruption_point();
-        }        catch (std::ios_base::failure& e) {
+        } catch (std::ios_base::failure& e) {
             if (strstr(e.what(), "end of data")) {
                 // Allow exceptions from under-length message on vRecv
                 printf("ProcessMessages(%s, %u bytes) : Exception '%s' caught, normally caused by a message being shorter than its stated length\n", strCommand.c_str(), nMessageSize, e.what());
@@ -3717,9 +3719,9 @@ bool ProcessMessages(CNode* pfrom) {
             } else {
                 PrintExceptionContinue(&e, "ProcessMessages()");
             }
-        }        catch (boost::thread_interrupted) {
+        } catch (boost::thread_interrupted) {
             throw;
-        }        catch (std::exception& e) {
+        } catch (std::exception& e) {
             PrintExceptionContinue(&e, "ProcessMessages()");
         } catch (...) {
             PrintExceptionContinue(NULL, "ProcessMessages()");
@@ -3924,7 +3926,7 @@ int static FormatHashBlocks(void* pbuffer, unsigned int len) {
     return blocks;
 }
 
-static const unsigned int pSHA256InitState[8] ={0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+static const unsigned int pSHA256InitState[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
 
 void SHA256Transform(void* pstate, void* pinput, const void* pinit) {
     SHA256_CTX ctx;
@@ -4442,7 +4444,7 @@ void static BasiccoinMiner(CWallet *pwallet) {
                 }
             }
         }
-    }    catch (boost::thread_interrupted) {
+    } catch (boost::thread_interrupted) {
         printf("BasiccoinMiner terminated\n");
         throw;
     }

@@ -1201,10 +1201,8 @@ static const char *strMainNetDNSSeed[][2] = {
 };
 
 static const char *strTestNetDNSSeed[][2] = {
-    {"basiccointools.com", "testnet-seed.basiccointools.com"},
-    {"xurious.com", "testnet-seed.ltc.xurious.com"},
-    {"wemine-testnet.com", "dnsseed.wemine-testnet.com"},
-    {NULL, NULL}
+    //{"miner1", "10.1.1.51"},
+    //{NULL, NULL}
 };
 
 void ThreadDNSAddressSeed()
