@@ -1254,7 +1254,7 @@ bool ConnectBestBlock(CValidationState &state) {
         CBlockIndex *pindexTest = pindexNewBest;
         std::vector<CBlockIndex*> vAttach;
         do {
-            return true;
+            //return true;
             if (pindexTest->nStatus & BLOCK_FAILED_MASK) {
                 // mark descendants failed
                 CBlockIndex *pindexFailed = pindexNewBest;
