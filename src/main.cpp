@@ -1240,6 +1240,8 @@ bool ConnectBestBlock(CValidationState &state) {
         printf("Getting to connect best block DIAG\n");
         CBlockIndex *pindexNewBest;
 
+            
+        
         {
             std::set<CBlockIndex*, CBlockIndexWorkComparator>::reverse_iterator it = setBlockIndexValid.rbegin();
             if (it == setBlockIndexValid.rend())
@@ -1250,13 +1252,21 @@ bool ConnectBestBlock(CValidationState &state) {
         if (pindexNewBest == pindexBest || (pindexBest && pindexNewBest->nChainWork == pindexBest->nChainWork))
             return true; // nothing to do
 
+         printf("DIAG getting here 101\n");
+        
         // check ancestry
         CBlockIndex *pindexTest = pindexNewBest;
         std::vector<CBlockIndex*> vAttach;
         do {
             //return true;
+            
+            printf("DIAG getting here 102\n");
+            
             if (pindexTest->nStatus & BLOCK_FAILED_MASK) {
                 // mark descendants failed
+                
+               
+                
                 CBlockIndex *pindexFailed = pindexNewBest;
                 while (pindexTest != pindexFailed) {
                     pindexFailed->nStatus |= BLOCK_FAILED_CHILD;
@@ -1265,21 +1275,26 @@ bool ConnectBestBlock(CValidationState &state) {
                     pindexFailed = pindexFailed->pprev;
                 }
                 InvalidChainFound(pindexNewBest);
-                break;
+                printf("DIAG dying here");
+                //break;
             }
 
             if (pindexBest == NULL || pindexTest->nChainWork > pindexBest->nChainWork)
+                printf("DIAG getting here 103\n");
                 vAttach.push_back(pindexTest);
 
             if (pindexTest->pprev == NULL || pindexTest->pnext != NULL) {
                 reverse(vAttach.begin(), vAttach.end());
 
+                printf("DIAG getting here 104\n");
+                
                 BOOST_FOREACH(CBlockIndex *pindexSwitch, vAttach) {
                     boost::this_thread::interruption_point();
                     try {
                         if (!SetBestChain(state, pindexSwitch))
                             return false;
                     } catch (std::runtime_error &e) {
+                        printf("DIAG getting here 105\n");
                         return state.Abort(_("System error: ") + e.what());
                     }
                 }
@@ -2636,7 +2651,7 @@ bool LoadBlockIndex() {
         pchMessageStart[1] = 0xc1;
         pchMessageStart[2] = 0xb7;
         pchMessageStart[3] = 0xdc;
-        hashGenesisBlock = uint256("0x6be7c8f3be4e9d3f6f03a817b082018f8a18e93311f60ff34c62181a23ebb0a6");
+        hashGenesisBlock = uint256("0x");
     }
 
     //
@@ -2672,25 +2687,25 @@ bool InitBlockIndex() {
         //   vMerkleTree: 97ddfbbae6
 
         // Genesis block
-        const char* pszTimestamp = "Archaeologists in Greece find two large marble statues at ancient tomb with possible link to Alexander the Great...!";
+        const char* pszTimestamp = "Archaeologists in Greece find two large marble statues";
         CTransaction txNew;
         txNew.vin.resize(1);
         txNew.vout.resize(1);
         txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(4) << vector<unsigned char>((const unsigned char*) pszTimestamp, (const unsigned char*) pszTimestamp + strlen(pszTimestamp));
-        txNew.vout[0].nValue = 50 * COIN;
+        txNew.vout[0].nValue = 20000 * COIN;
         txNew.vout[0].scriptPubKey = CScript() << ParseHex("040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9") << OP_CHECKSIG;
         CBlock block;
         block.vtx.push_back(txNew);
         block.hashPrevBlock = 0;
         block.hashMerkleRoot = block.BuildMerkleTree();
         block.nVersion = 1;
-        block.nTime = 1410271584;
+        block.nTime = 1410271586;
         block.nBits = 0x1e0ffff0;
         block.nNonce = 0;
 
         if (fTestNet) {
-            block.nTime = 1410271584;
-            block.nNonce = 553382;
+            block.nTime = 1410271586;
+            block.nNonce = 0;
         }
 
         //// debug print
@@ -2698,7 +2713,7 @@ bool InitBlockIndex() {
         printf("%s\n", hash.ToString().c_str());
         printf("%s = Genesis Block\n", hashGenesisBlock.ToString().c_str());
         printf("%s\n", block.hashMerkleRoot.ToString().c_str());
-        assert(block.hashMerkleRoot == uint256("0x1f1ed2572f95affa5ec799aef6665551f1c7ebf064c854d0e0e569715942f877"));
+        assert(block.hashMerkleRoot == uint256("0x0bdff5c9ab71e35a268d020ac7ef2fa5c45d685ce26867dcfc1fe323cc0a12de"));
 
         // This part was used to generate the genesis block.
         // Uncomment to use it again.
