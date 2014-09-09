@@ -1079,7 +1079,8 @@ int64 static GetBlockValue(int nHeight, int64 nFees) {
 }
 
 static const int64 nTargetTimespan = 1 * 3 * 60 * 60; // Basiccoin: 3 hours
-static const int64 nTargetSpacing = 1.5 * 60; // Basiccoin: 1.5 minutes
+//static const int64 nTargetSpacing = 1.5 * 60; // Basiccoin: 1.5 minutes
+static const int64 nTargetSpacing = 10; // Basiccoin: 1.5 minutes TODO change back to real timing
 static const int64 nInterval = nTargetTimespan / nTargetSpacing;
 
 //
