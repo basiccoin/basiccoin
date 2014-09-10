@@ -35,7 +35,7 @@ CTxMemPool mempool;
 unsigned int nTransactionsUpdated = 0;
 
 map<uint256, CBlockIndex*> mapBlockIndex;
-uint256 hashGenesisBlock("0x");
+uint256 hashGenesisBlock("0x71057b5ca9745b5e4ee4dcd094e00f4b34c92525758a2982deacca671b66ff3c");
 static CBigNum bnProofOfWorkLimit(~uint256(0) >> 20); // Basiccoin: starting difficulty is 1 / 2^12
 CBlockIndex* pindexGenesisBlock = NULL;
 int nBestHeight = -1;
@@ -1079,8 +1079,8 @@ int64 static GetBlockValue(int nHeight, int64 nFees) {
 }
 
 static const int64 nTargetTimespan = 1 * 3 * 60 * 60; // Basiccoin: 3 hours
-//static const int64 nTargetSpacing = 1.5 * 60; // Basiccoin: 1.5 minutes
-static const int64 nTargetSpacing = 10; // Basiccoin: 1.5 minutes TODO change back to real timing
+static const int64 nTargetSpacing = 1.5 * 60; // Basiccoin: 1.5 minutes
+//static const int64 nTargetSpacing = 10; // Basiccoin: 1.5 minutes TODO change back to real timing
 static const int64 nInterval = nTargetTimespan / nTargetSpacing;
 
 //
@@ -1236,8 +1236,7 @@ void static InvalidBlockFound(CBlockIndex *pindex) {
 
 bool ConnectBestBlock(CValidationState &state) {
     do {
-        
-        printf("Getting to connect best block DIAG\n");
+
         CBlockIndex *pindexNewBest;
 
             
@@ -1252,20 +1251,15 @@ bool ConnectBestBlock(CValidationState &state) {
         if (pindexNewBest == pindexBest || (pindexBest && pindexNewBest->nChainWork == pindexBest->nChainWork))
             return true; // nothing to do
 
-         printf("DIAG getting here 101\n");
+
         
         // check ancestry
         CBlockIndex *pindexTest = pindexNewBest;
         std::vector<CBlockIndex*> vAttach;
         do {
-            //return true;
-            
-            printf("DIAG getting here 102\n");
-            
+          
             if (pindexTest->nStatus & BLOCK_FAILED_MASK) {
                 // mark descendants failed
-                
-               
                 
                 CBlockIndex *pindexFailed = pindexNewBest;
                 while (pindexTest != pindexFailed) {
@@ -1275,18 +1269,15 @@ bool ConnectBestBlock(CValidationState &state) {
                     pindexFailed = pindexFailed->pprev;
                 }
                 InvalidChainFound(pindexNewBest);
-                printf("DIAG dying here");
-                //break;
+                
+                break;
             }
 
             if (pindexBest == NULL || pindexTest->nChainWork > pindexBest->nChainWork)
-                printf("DIAG getting here 103\n");
                 vAttach.push_back(pindexTest);
 
             if (pindexTest->pprev == NULL || pindexTest->pnext != NULL) {
                 reverse(vAttach.begin(), vAttach.end());
-
-                printf("DIAG getting here 104\n");
                 
                 BOOST_FOREACH(CBlockIndex *pindexSwitch, vAttach) {
                     boost::this_thread::interruption_point();
@@ -1294,7 +1285,6 @@ bool ConnectBestBlock(CValidationState &state) {
                         if (!SetBestChain(state, pindexSwitch))
                             return false;
                     } catch (std::runtime_error &e) {
-                        printf("DIAG getting here 105\n");
                         return state.Abort(_("System error: ") + e.what());
                     }
                 }
@@ -2699,9 +2689,9 @@ bool InitBlockIndex() {
         block.hashPrevBlock = 0;
         block.hashMerkleRoot = block.BuildMerkleTree();
         block.nVersion = 1;
-        block.nTime = 1410271586;
+        block.nTime = 1410336617;
         block.nBits = 0x1e0ffff0;
-        block.nNonce = 882081;
+        block.nNonce = 3455330;
 
         if (fTestNet) {
             block.nTime = 1410271586;
